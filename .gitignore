@@ -1,0 +1,18 @@
+.gradle/
+build/
+*/build/
+run/
+*.log
+libs/
+.idea/
+.vscode/
+*.iml
+crash-reports/
+saves/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# 本地逆向/参考二进制不入库
+tools/*.jar
+tools/yarn-*/
+tools/fabric-example-*/

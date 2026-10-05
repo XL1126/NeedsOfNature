@@ -18,6 +18,9 @@
         ],
         "client": [
             "com.nonid.NeedsOfNatureClient"
+		],
+		"modmenu": [
+			"com.nonid.integration.NonModMenuIntegration"
 		]
 	},
 	"mixins": [

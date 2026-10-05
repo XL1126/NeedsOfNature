@@ -149,23 +149,21 @@ final class NonGenderSystem {
         if (mask == 0) {
             mask = NonGenderSystem.resolveGenderMaskFromTags((Entity)player);
         }
-        if (mask != 0) {
-            NonGenderSystem.markPlayerGenderSelected(player);
+        NonConfig config = NeedsOfNature.getConfig();
+        // 要求进服选择时始终弹窗（含已有默认性别/旧档已标记的情况）
+        if (config.requirePlayerGenderSelectionOnJoin()) {
+            if (mask != 0) {
+                NonGenderSystem.applyGenderMask((Entity)player, mask);
+            }
+            NonGenderSystem.sendGenderSelectionPrompt(player);
+            return;
         }
         if (mask == 0) {
-            NonConfig config = NeedsOfNature.getConfig();
-            if (config.requirePlayerGenderSelectionOnJoin()) {
-                NonGenderSystem.sendGenderSelectionPrompt(player);
-                return;
-            }
             mask = 2;
-            NonGenderSystem.applyPlayerGenderMask(player, mask, true, NonChangeSource.SYSTEM);
+            NonGenderSystem.applyPlayerGenderMask(player, mask, false, NonChangeSource.SYSTEM);
             return;
         }
         NonGenderSystem.applyGenderMask((Entity)player, mask);
-        if (NeedsOfNature.getConfig().requirePlayerGenderSelectionOnJoin() && !NonGenderSystem.hasPlayerGenderSelected(player)) {
-            NonGenderSystem.sendGenderSelectionPrompt(player);
-        }
     }
 
     static int setPlayerGenderFromCommand(ServerPlayerEntity player, int mask) {

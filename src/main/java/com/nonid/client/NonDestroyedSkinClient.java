@@ -537,6 +537,7 @@ public final class NonDestroyedSkinClient {
                 int maskHeight = mask.getHeight();
                 for (int y = 0; y < height; ++y) {
                     for (int x = 0; x < width; ++x) {
+                        if (NonDestroyedSkinClient.shouldPreserveHeadPixel(y)) continue;
                         int factor = NonDestroyedSkinClient.maskFactor(mask.getColor(x % maskWidth, y % maskHeight));
                         if (factor <= 0) continue;
                         int baseArgb = base.getColor(x, y);
@@ -577,6 +578,32 @@ public final class NonDestroyedSkinClient {
             NativeImage copy = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
             copy.copyFrom(image);
             return copy;
+        }
+        // 回退：反射调用 getImage()，兼容动态皮肤纹理
+        if (texture != null) {
+            try {
+                java.lang.reflect.Method getImage = texture.getClass().getMethod("getImage", new Class[0]);
+                Object raw = getImage.invoke((Object)texture, new Object[0]);
+                if (raw instanceof NativeImage) {
+                    NativeImage image = (NativeImage)raw;
+                    NativeImage copy = new NativeImage(NativeImage.Format.RGBA, image.getWidth(), image.getHeight(), false);
+                    copy.copyFrom(image);
+                    return copy;
+                }
+            }
+            catch (ReflectiveOperationException | RuntimeException e) {
+                // 继续尝试 skins 缓存
+            }
+        }
+        // 回退：本地 skins 缓存目录
+        try {
+            Path skinCache = net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir().resolve("skins").resolve(textureId.getPath().replace('/', '_'));
+            if (Files.isRegularFile(skinCache)) {
+                return NativeImage.read(Files.newInputStream(skinCache));
+            }
+        }
+        catch (Exception e) {
+            NeedsOfNature.LOGGER.warn("[SKIN] readTextureImage fallback failed for {}", textureId, e);
         }
         return null;
     }
@@ -880,7 +907,10 @@ public final class NonDestroyedSkinClient {
                     out.setColor(x, y, NonDestroyedSkinClient.tintByBrightness(tintRgb, brightness, alpha));
                 }
             }
-            NonDestroyedSkinClient.copyRegion(base, out, 0, 0, 64, 16);
+            if (NonDestroyedSkinClient.shouldPreserveHead()) {
+                NonDestroyedSkinClient.copyRegion(base, out, 0, 0, 64, 16);
+                NeedsOfNature.LOGGER.info("[SKIN] preserveHead OK: base={}x{} dest={}x{}", base.getWidth(), base.getHeight(), out.getWidth(), out.getHeight());
+            }
             return NonDestroyedSkinClient.writeImageToBytes(out);
         }
     }
@@ -913,10 +943,61 @@ public final class NonDestroyedSkinClient {
     }
 
     private static Identifier defaultDestroyedTexture(boolean useMaleTexture, boolean wide) {
-        if (useMaleTexture) {
-            return wide ? DEFAULT_DESTROYED_TEXTURE_M_WIDE : DEFAULT_DESTROYED_TEXTURE_M_SLIM;
+        String variant = NeedsOfNature.getConfig().getDestroyedSkinVariant();
+        if (variant != null && !variant.isBlank()) {
+            Identifier custom = NonDestroyedSkinClient.resolveVariantTexture(variant, wide);
+            if (custom != null) {
+                return custom;
+            }
         }
-        return wide ? DEFAULT_DESTROYED_TEXTURE_F_WIDE : DEFAULT_DESTROYED_TEXTURE_F_SLIM;
+        // 文档默认：纤细 → alex_f，粗手臂 → kai_m
+        return wide
+                ? Identifier.of("needsofnature", "textures/player_destroyed/default/wide/kai_m.png")
+                : Identifier.of("needsofnature", "textures/player_destroyed/default/slim/alex_f.png");
+    }
+
+    @Nullable
+    private static Identifier resolveVariantTexture(String variant, boolean wide) {
+        String raw = variant.trim();
+        if (raw.isEmpty()) {
+            return null;
+        }
+        String model = wide ? "wide" : "slim";
+        String name = raw;
+        int slash = raw.indexOf('/');
+        if (slash >= 0) {
+            model = raw.substring(0, slash).trim();
+            name = raw.substring(slash + 1).trim();
+        } else {
+            String lower = raw.toLowerCase(java.util.Locale.ROOT);
+            if (lower.equals("slim") || lower.equals("alex")) {
+                return Identifier.of("needsofnature", "textures/player_destroyed/default/slim/alex_f.png");
+            }
+            if (lower.equals("wide") || lower.equals("kai")) {
+                return Identifier.of("needsofnature", "textures/player_destroyed/default/wide/kai_m.png");
+            }
+            if (lower.equals("reset") || lower.equals("auto")) {
+                return null;
+            }
+        }
+        if (name.isEmpty()) {
+            return null;
+        }
+        String modelDir = model.toLowerCase(java.util.Locale.ROOT);
+        if (modelDir.equals("slim") || modelDir.equals("alex")) {
+            modelDir = "slim";
+        } else if (modelDir.equals("wide") || modelDir.equals("kai")) {
+            modelDir = "wide";
+        }
+        return Identifier.of("needsofnature", "textures/player_destroyed/default/" + modelDir + "/" + name.toLowerCase(java.util.Locale.ROOT) + ".png");
+    }
+
+    private static boolean shouldPreserveHead() {
+        return NeedsOfNature.getConfig().isPreserveDestroyedSkinHead();
+    }
+
+    private static boolean shouldPreserveHeadPixel(int y) {
+        return NonDestroyedSkinClient.shouldPreserveHead() && y < 16;
     }
 
     private static void copyRegion(NativeImage source, NativeImage target, int minX, int minY, int maxX, int maxY) {

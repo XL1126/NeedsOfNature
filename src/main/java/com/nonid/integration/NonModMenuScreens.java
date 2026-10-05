@@ -123,6 +123,7 @@ final class NonModMenuScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
         }
@@ -170,6 +171,7 @@ final class NonModMenuScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
         }

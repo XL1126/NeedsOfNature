@@ -170,6 +170,7 @@ final class NonModMenuHudConfigScreen {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updatePreviewOffsets();
             super.render(context, mouseX, mouseY, delta);
             this.lastBounds = NonHudOverlay.getUiPreviewBounds(context);

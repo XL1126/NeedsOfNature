@@ -203,6 +203,7 @@ implements ClientModInitializer {
     private static final Set<UUID> FILLED_BOTTLE_PROP_INSTANCES = new HashSet<UUID>();
     private static final Set<UUID> INTIFACE_BIRTH_CUTOFF_INSTANCES = new HashSet<UUID>();
     private static final Map<UUID, PendingManualPeakPropOverride> PENDING_MANUAL_PEAK_PROP_OVERRIDES = new HashMap<UUID, PendingManualPeakPropOverride>();
+    private static GenderSelectionPromptS2CPayload pendingGenderSelectionPrompt;
     private static volatile Method AFW_RIGHT_PROP_OVERRIDE_METHOD = null;
     private static volatile boolean AFW_RIGHT_PROP_OVERRIDE_LOOKED_UP = false;
     private static long CLIENT_FALLBACK_TICKS = 0L;
@@ -285,7 +286,11 @@ implements ClientModInitializer {
             NonPregnancyClientState.setPregnantEntityTypeId(id);
         });
         NonClientNetworking.register(GameplayRuntimeSettingsS2CPayload.ID, GameplayRuntimeSettingsS2CPayload::read, (client, payload) -> NonHudOverlay.setRuntimeGameplaySettings(payload.loopSeconds(), payload.peakLoopSeconds(), payload.attackEscapeHits(), payload.attackDecayPerSecond(), payload.attackEscapeDamageDifficultyPercent(), payload.attackCreativePlayers()));
-        NonClientNetworking.register(GenderSelectionPromptS2CPayload.ID, GenderSelectionPromptS2CPayload::read, (client, payload) -> client.setScreen((Screen)new NonGenderSelectionScreen(payload.allowedMask(), payload.currentMask(), payload.permanent())));
+        NonClientNetworking.register(GenderSelectionPromptS2CPayload.ID, GenderSelectionPromptS2CPayload::read, (client, payload) -> {
+            pendingGenderSelectionPrompt = payload;
+            NeedsOfNatureClient.openPendingGenderSelectionIfReady(client);
+        });
+        ClientTickEvents.END_CLIENT_TICK.register(NeedsOfNatureClient::openPendingGenderSelectionIfReady);
         NonClientNetworking.register(HostConfigSyncS2CPayload.ID, HostConfigSyncS2CPayload::read, (client, payload) -> {
             String raw = payload.json();
             if (raw == null || raw.isBlank()) {
@@ -767,6 +772,12 @@ implements ClientModInitializer {
         if (config == null) {
             return;
         }
+        // 进服需要先选性别时，不要用配置里的默认性别抢先写入
+        if (config.requirePlayerGenderSelectionOnJoin()) {
+            NonWildfireGenderSync.syncFromNonConfig(config);
+            NonWildfireGenderSync.syncDestroyedSkinOverrides(config);
+            return;
+        }
         int mask = config.getPlayerGenderMask() & 3;
         if (mask == 0) {
             mask = NonConfig.PlayerGenderSelection.FEMALE.mask();
@@ -1140,6 +1151,22 @@ implements ClientModInitializer {
         }
         NeedsOfNatureClient.trySetAfwRightHandPropOverride(pending.instanceId(), pending.actorUuid(), new ItemStack((ItemConvertible)Registries.ITEM.get(pending.itemId())));
         return true;
+    }
+
+    private static void openPendingGenderSelectionIfReady(MinecraftClient client) {
+        if (pendingGenderSelectionPrompt == null || client == null) {
+            return;
+        }
+        // 等待进入世界后再弹出，避免被登录/地形下载界面顶掉
+        if (client.player == null || client.world == null) {
+            return;
+        }
+        if (client.currentScreen != null && !(client.currentScreen instanceof NonGenderSelectionScreen)) {
+            return;
+        }
+        GenderSelectionPromptS2CPayload payload = pendingGenderSelectionPrompt;
+        pendingGenderSelectionPrompt = null;
+        client.setScreen((Screen)new NonGenderSelectionScreen(payload.allowedMask(), payload.currentMask(), payload.permanent()));
     }
 
     private static void applyPendingManualPeakPropOverrides(MinecraftClient client) {

@@ -106,6 +106,39 @@ final class NonCommands {
             }
             return NonCommands.sendPregnantEntity((ServerCommandSource)ctx.getSource(), self);
         })).then(CommandManager.argument((String)"player", (ArgumentType)EntityArgumentType.player()).executes(ctx -> NonCommands.sendPregnantEntity((ServerCommandSource)ctx.getSource(), EntityArgumentType.getPlayer((CommandContext)ctx, (String)"player"))))))));
+        // 破损皮肤：头部保留 / 变体指定
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            LiteralArgumentBuilder<ServerCommandSource> head = CommandManager.literal("head");
+            head.then(CommandManager.literal("on").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), true)));
+            head.then(CommandManager.literal("off").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), false)));
+            LiteralArgumentBuilder<ServerCommandSource> ripped = CommandManager.literal("ripped");
+            ripped.then(head);
+            LiteralArgumentBuilder<ServerCommandSource> variant = CommandManager.literal("variant");
+            variant.then(CommandManager.literal("slim").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "slim")));
+            variant.then(CommandManager.literal("alex").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "alex")));
+            variant.then(CommandManager.literal("wide").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "wide")));
+            variant.then(CommandManager.literal("kai").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "kai")));
+            variant.then(CommandManager.literal("reset").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "reset")));
+            LiteralArgumentBuilder<ServerCommandSource> skin = CommandManager.literal("skin");
+            skin.then(ripped);
+            skin.then(variant);
+            dispatcher.register(CommandManager.literal("needsofnature").requires(NonCommands::isOpCommandSource).then(skin));
+        });
+    }
+
+    private static int setPreserveDestroyedSkinHead(ServerCommandSource source, boolean value) {
+        NeedsOfNature.getConfig().setPreserveDestroyedSkinHead(value);
+        NeedsOfNature.getConfig().save();
+        source.sendFeedback(() -> Text.literal((String)("preserveDestroyedSkinHead = " + value)), true);
+        return 1;
+    }
+
+    private static int setDestroyedSkinVariant(ServerCommandSource source, String variant) {
+        String stored = "reset".equalsIgnoreCase(variant) ? "" : variant;
+        NeedsOfNature.getConfig().setDestroyedSkinVariant(stored);
+        NeedsOfNature.getConfig().save();
+        source.sendFeedback(() -> Text.literal((String)("destroyedSkinVariant = " + (stored.isEmpty() ? "<auto>" : stored))), true);
+        return 1;
     }
 
     private static LiteralArgumentBuilder<ServerCommandSource> messCommand() {

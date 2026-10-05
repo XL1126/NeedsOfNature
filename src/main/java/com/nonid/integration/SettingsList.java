@@ -18,6 +18,7 @@
  */
 package com.nonid.integration;
 
+import com.nonid.NeedsOfNature;
 import com.nonid.integration.NonModMenuScreens;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,21 +38,91 @@ import net.minecraft.client.gui.tooltip.Tooltip;
 
 final class SettingsList
 extends ElementListWidget<SettingsList.RowEntry> {
-    SettingsList(MinecraftClient client, int width, int height, int top) {
-        super(client, width, height, top, height, 24);
+    private static boolean debugLogged;
+    private static int debugRenderLog;
+    private static final boolean DEBUG_LAYOUT =
+            Boolean.parseBoolean(System.getProperty("non.debug.ui", "false"));
+
+    /**
+     * @param width  界面宽度
+     * @param height 界面/列表完整高度（用于滚动计算，通常传 Screen.height）
+     * @param top    可见区域上边界
+     * @param bottom 可见区域下边界（不含）
+     */
+    SettingsList(MinecraftClient client, int width, int height, int top, int bottom) {
+        // 1.20.1: (client, width, height, top, bottom, itemHeight)
+        super(client, width, height, top, bottom, 32);
         this.centerListVertically = false;
+        this.setRenderHeader(false, 0);
+        if (DEBUG_LAYOUT && !debugLogged) {
+            debugLogged = true;
+            NeedsOfNature.LOGGER.info(
+                    "[UI] SettingsList ctor itemHeight={} top={} bottom={} left={} right={} w={} h={} rowW={} rowL={}",
+                    this.itemHeight, this.top, this.bottom, this.left, this.right,
+                    this.width, this.height, this.getRowWidth(), this.getRowLeft());
+        }
     }
 
     void addEntryRow(RowEntry entry) {
         super.addEntry(entry);
+        entry.park();
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        // 兜底：任何仍停在 (0,0) 的列表控件都先移出屏幕，避免堆叠
+        try {
+            for (RowEntry entry : this.children()) {
+                if (entry != null) {
+                    entry.parkIfOrigin();
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        super.render(context, mouseX, mouseY, delta);
+    }
+
+    /**
+     * 把条目绘制裁剪在列表可视区内，避免控件画到标题/底部按钮上。
+     */
+    @Override
+    protected void renderEntry(DrawContext context, int mouseX, int mouseY, float delta, int index, int x, int y, int width, int height) {
+        if (DEBUG_LAYOUT) {
+            if (debugRenderLog++ < 30) {
+                NeedsOfNature.LOGGER.info("[UI] renderEntry idx={} x={} y={} w={} h={}", index, x, y, width, height);
+            }
+            context.fill(x, y, x + width, y + height, 0x22FF0000);
+            context.drawText(this.client.textRenderer, "#" + index + " y=" + y, x + 2, y + 2, 0xFFFF00, true);
+        }
+        try {
+            context.enableScissor(this.left, this.top, this.right, this.bottom);
+            super.renderEntry(context, mouseX, mouseY, delta, index, x, y, width, height);
+            context.disableScissor();
+        } catch (Throwable t) {
+            try {
+                super.renderEntry(context, mouseX, mouseY, delta, index, x, y, width, height);
+            } catch (Throwable ignored) {
+            }
+            try {
+                context.disableScissor();
+            } catch (Throwable ignored) {
+            }
+        }
     }
 
     public int getRowWidth() {
-        return 440;
+        // 不要宽过界面，否则控件会压到滚动条/屏幕外
+        return Math.min(400, Math.max(280, this.width - 48));
     }
 
     public int getRowLeft() {
         return (this.width - this.getRowWidth()) / 2;
+    }
+
+    @Override
+    protected int getScrollbarPositionX() {
+        // 默认在 width/2+124，会盖住宽行控件；放到行右侧外
+        return this.getRowLeft() + this.getRowWidth() + 6;
     }
 
     static final class RowEntry
@@ -67,7 +138,7 @@ extends ElementListWidget<SettingsList.RowEntry> {
         private RowEntry(TextRenderer textRenderer, Text label, ClickableWidget primary, ClickableWidget reset, RowType type, Tooltip tooltip) {
             this.textRenderer = textRenderer;
             this.label = label;
-            this.labelWidget = label == null ? null : new TextWidget(0, 0, 0, 20, label, textRenderer);
+            this.labelWidget = label == null ? null : new TextWidget(0, 0, 0, 20, label, textRenderer).alignLeft();
             this.primary = primary;
             this.reset = reset;
             this.type = type;
@@ -86,6 +157,28 @@ extends ElementListWidget<SettingsList.RowEntry> {
                     NonModMenuScreens.setTooltip(this.primary, tooltip);
                 }
             }
+            // 未参与布局前先移出屏幕，避免 (0,0) 堆叠绘制
+            this.park();
+        }
+
+        private void park() {
+            if (this.labelWidget != null) {
+                this.labelWidget.setY(-10000);
+            }
+            for (ClickableWidget w : this.widgets) {
+                w.setY(-10000);
+            }
+        }
+
+        private void parkIfOrigin() {
+            if (this.labelWidget != null && this.labelWidget.getY() == 0) {
+                this.labelWidget.setY(-10000);
+            }
+            for (ClickableWidget w : this.widgets) {
+                if (w.getY() == 0) {
+                    w.setY(-10000);
+                }
+            }
         }
 
         static RowEntry labeledField(TextRenderer textRenderer, Text label, ClickableWidget field, ClickableWidget reset, Tooltip tooltip) {
@@ -100,6 +193,8 @@ extends ElementListWidget<SettingsList.RowEntry> {
                     entry.widgets.add(field);
                 }
             }
+            // 构造里的 park() 发生在 add 之前，这里必须再 park 一次
+            entry.park();
             return entry;
         }
 
@@ -112,7 +207,12 @@ extends ElementListWidget<SettingsList.RowEntry> {
         }
 
         public void render(DrawContext context, int index, int rowY, int rowX, int rowWidth, int rowHeight, int mouseX, int mouseY, boolean hovered, float delta) {
-            int widgetY = rowY + 2;
+            // 行完全在可视区外时不布局，防止控件残影
+            if (rowY + rowHeight < 0 || rowY > 4000) {
+                this.park();
+                return;
+            }
+            int widgetY = rowY + Math.max(0, (rowHeight - 20) / 2);
             if (this.type == RowType.SECTION_HEADER) {
                 if (this.label != null) {
                     int bandY = rowY + 3;
@@ -139,8 +239,9 @@ extends ElementListWidget<SettingsList.RowEntry> {
                 if (this.labelWidget != null) {
                     int labelWidth = Math.max(20, x - rowX - 8);
                     this.labelWidget.setX(rowX + 4);
-                    this.labelWidget.setY(rowY + 6);
+                    this.labelWidget.setY(rowY + 4);
                     this.labelWidget.setWidth(labelWidth);
+                    this.labelWidget.alignLeft();
                 }
                 for (ClickableWidget widget : this.widgets) {
                     widget.setX(x);
@@ -162,8 +263,9 @@ extends ElementListWidget<SettingsList.RowEntry> {
                     if (this.labelWidget != null) {
                         int labelWidth = Math.max(20, fieldX - rowX - 8);
                         this.labelWidget.setX(rowX + 4);
-                        this.labelWidget.setY(rowY + 6);
+                        this.labelWidget.setY(rowY + 4);
                         this.labelWidget.setWidth(labelWidth);
+                        this.labelWidget.alignLeft();
                     }
                 } else {
                     int resetW = this.reset == null ? 0 : this.reset.getWidth();

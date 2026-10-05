@@ -65,7 +65,7 @@ extends Screen {
         int listTop = 32;
         int bottomArea = 40;
         int listHeight = Math.max(0, this.height - listTop - bottomArea);
-        SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+        SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
         this.addDrawableChild(settingsList);
         int resetW = 20;
         settingsList.addEntryRow(SettingsList.RowEntry.sectionHeader(this.textRenderer, (Text)Text.translatable((String)"config.needsofnature.section.intiface_connection")));
@@ -161,6 +161,7 @@ extends Screen {
     }
 
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context);
         this.updateResetButtons();
         if (this.statusButton != null) {
             this.statusButton.setMessage(NonIntifaceDependencyManager.librariesUsable() ? NonIntifaceBridge.statusText(this.config) : NonIntifaceDependencyManager.statusText());

@@ -96,7 +96,7 @@ final class NonModMenuSystemSettingsScreens {
             int listTop = 32;
             int bottomArea = 88;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -167,6 +167,7 @@ final class NonModMenuSystemSettingsScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -366,7 +367,7 @@ final class NonModMenuSystemSettingsScreens {
             int listTop = 32;
             int bottomArea = 64;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -427,6 +428,7 @@ final class NonModMenuSystemSettingsScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -551,7 +553,7 @@ final class NonModMenuSystemSettingsScreens {
             int listTop = 32;
             int bottomArea = 88;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int resetW = 20;
             settingsList.addEntryRow(SettingsList.RowEntry.sectionHeader(this.textRenderer, (Text)Text.translatable((String)"config.needsofnature.section.breeding")));
@@ -612,6 +614,7 @@ final class NonModMenuSystemSettingsScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -704,7 +707,7 @@ final class NonModMenuSystemSettingsScreens {
             int listTop = 32;
             int bottomArea = 64;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int resetW = 20;
             settingsList.addEntryRow(SettingsList.RowEntry.sectionHeader(this.textRenderer, (Text)Text.translatable((String)"config.needsofnature.section.core_systems")));
@@ -796,6 +799,7 @@ final class NonModMenuSystemSettingsScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);

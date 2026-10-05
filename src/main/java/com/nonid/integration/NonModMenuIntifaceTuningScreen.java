@@ -40,7 +40,7 @@ extends Screen {
         int listTop = 32;
         int bottomArea = 40;
         int listHeight = Math.max(0, this.height - listTop - bottomArea);
-        SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+        SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
         this.addDrawableChild(settingsList);
         settingsList.addEntryRow(SettingsList.RowEntry.sectionHeader(this.textRenderer, (Text)Text.translatable((String)"config.needsofnature.section.intiface_toy_settings")));
         ButtonWidget vibratorButton = ButtonWidget.builder((Text)Text.translatable((String)"config.needsofnature.intiface_vibrator_settings"), button -> MinecraftClient.getInstance().setScreen((Screen)new NonModMenuIntifaceVibratorScreen(this, this.config))).dimensions(0, 0, 220, 20).build();
@@ -56,6 +56,7 @@ extends Screen {
     }
 
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context);
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
     }

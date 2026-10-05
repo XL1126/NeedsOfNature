@@ -125,12 +125,14 @@ public final class NonConfig {
     private int multiActorJoinChancePercent = 75;
     private String playerGender = PlayerGenderSelection.FEMALE.id();
     private boolean allowPlayerGenderChangeAnytime = true;
-    private boolean requirePlayerGenderSelectionOnJoin = false;
+    private boolean requirePlayerGenderSelectionOnJoin = true;
     private int allowedStartingGenderMask = 7;
     private boolean pregnancyEnabled = true;
     private boolean liquidTankEnabled = true;
     private boolean messSystemEnabled = true;
     private boolean destroyedSkinSystemEnabled = true;
+    private boolean preserveDestroyedSkinHead = true;
+    private String destroyedSkinVariant = "";
     private boolean allowCraftingTableSkinRepair = false;
     private boolean keepMessAfterDeath = false;
     private boolean keepRippedSkinAfterDeath = false;
@@ -744,6 +746,22 @@ public final class NonConfig {
 
     public void setDestroyedSkinSystemEnabled(boolean value) {
         this.destroyedSkinSystemEnabled = value;
+    }
+
+    public boolean isPreserveDestroyedSkinHead() {
+        return this.preserveDestroyedSkinHead;
+    }
+
+    public void setPreserveDestroyedSkinHead(boolean value) {
+        this.preserveDestroyedSkinHead = value;
+    }
+
+    public String getDestroyedSkinVariant() {
+        return this.destroyedSkinVariant == null ? "" : this.destroyedSkinVariant;
+    }
+
+    public void setDestroyedSkinVariant(String value) {
+        this.destroyedSkinVariant = value == null ? "" : value.trim();
     }
 
     public boolean isCraftingTableSkinRepairAllowed() {

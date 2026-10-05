@@ -61,7 +61,7 @@ extends Screen {
         int listTop = 32;
         int bottomArea = 40;
         int listHeight = Math.max(0, this.height - listTop - bottomArea);
-        SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+        SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
         this.addDrawableChild(settingsList);
         settingsList.addEntryRow(SettingsList.RowEntry.sectionHeader(this.textRenderer, (Text)Text.translatable((String)"config.needsofnature.section.intiface_oscillator")));
         this.oscillatorRegularSlider = this.percentSlider(this.oscillatorRegularSpeedPercent, value -> {
@@ -127,6 +127,7 @@ extends Screen {
     }
 
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context);
         this.updateResetButtons();
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);

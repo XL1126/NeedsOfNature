@@ -43,17 +43,17 @@ public final class NonPotions {
     private static final int FERTILITY_BASE_DURATION_TICKS = 9600;
     private static final int FERTILITY_STRONG_DURATION_TICKS = 4800;
     private static final int FERTILITY_LONG_DURATION_TICKS = 19200;
-    public static final Potion LIQUID = NonPotions.register("liquid", new Potion());
-    public static final Potion ENERGY = NonPotions.register("energy", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY, 800)));
-    public static final Potion ENERGY_II = NonPotions.register("energy_ii", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY, 400, 1)));
-    public static final Potion ENERGY_LONG = NonPotions.register("energy_long", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY, 1600)));
-    public static final Potion ENERGY_RELIEF = NonPotions.register("energy_relief", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 800)));
-    public static final Potion ENERGY_RELIEF_II = NonPotions.register("energy_relief_ii", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 400, 1)));
-    public static final Potion ENERGY_RELIEF_LONG = NonPotions.register("energy_relief_long", new Potion(new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 1600)));
-    public static final Potion FERTILE_NECTAR = NonPotions.register("fertile_nectar", new Potion());
-    public static final Potion FERTILITY_INCREASER = NonPotions.register("fertility_increaser", new Potion(new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 9600)));
-    public static final Potion FERTILITY_INCREASER_II = NonPotions.register("fertility_increaser_ii", new Potion(new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 4800, 1)));
-    public static final Potion FERTILITY_INCREASER_LONG = NonPotions.register("fertility_increaser_long", new Potion(new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 19200)));
+    public static final Potion LIQUID = NonPotions.register("liquid", new Potion("needsofnature.liquid"));
+    public static final Potion ENERGY = NonPotions.register("energy", new Potion("needsofnature.energy", new StatusEffectInstance(NonStatusEffects.ENERGY, 800)));
+    public static final Potion ENERGY_II = NonPotions.register("energy_ii", new Potion("needsofnature.energy_ii", new StatusEffectInstance(NonStatusEffects.ENERGY, 400, 1)));
+    public static final Potion ENERGY_LONG = NonPotions.register("energy_long", new Potion("needsofnature.energy_long", new StatusEffectInstance(NonStatusEffects.ENERGY, 1600)));
+    public static final Potion ENERGY_RELIEF = NonPotions.register("energy_relief", new Potion("needsofnature.energy_relief", new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 800)));
+    public static final Potion ENERGY_RELIEF_II = NonPotions.register("energy_relief_ii", new Potion("needsofnature.energy_relief_ii", new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 400, 1)));
+    public static final Potion ENERGY_RELIEF_LONG = NonPotions.register("energy_relief_long", new Potion("needsofnature.energy_relief_long", new StatusEffectInstance(NonStatusEffects.ENERGY_RELIEF, 1600)));
+    public static final Potion FERTILE_NECTAR = NonPotions.register("fertile_nectar", new Potion("needsofnature.fertile_nectar"));
+    public static final Potion FERTILITY_INCREASER = NonPotions.register("fertility_increaser", new Potion("needsofnature.fertility_increaser", new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 9600)));
+    public static final Potion FERTILITY_INCREASER_II = NonPotions.register("fertility_increaser_ii", new Potion("needsofnature.fertility_increaser_ii", new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 4800, 1)));
+    public static final Potion FERTILITY_INCREASER_LONG = NonPotions.register("fertility_increaser_long", new Potion("needsofnature.fertility_increaser_long", new StatusEffectInstance(NonStatusEffects.FERTILITY_INCREASER, 19200)));
 
     private NonPotions() {
     }

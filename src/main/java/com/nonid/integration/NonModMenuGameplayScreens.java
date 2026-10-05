@@ -136,7 +136,7 @@ final class NonModMenuGameplayScreens {
             int listTop = 32;
             int bottomArea = 40;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -340,6 +340,7 @@ final class NonModMenuGameplayScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -629,7 +630,7 @@ final class NonModMenuGameplayScreens {
             int listTop = 32;
             int bottomArea = 40;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -679,6 +680,7 @@ final class NonModMenuGameplayScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -851,7 +853,7 @@ final class NonModMenuGameplayScreens {
             int listTop = 32;
             int bottomArea = 40;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -945,6 +947,7 @@ final class NonModMenuGameplayScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -1194,7 +1197,7 @@ final class NonModMenuGameplayScreens {
             int listTop = 32;
             int bottomArea = 64;
             int listHeight = Math.max(0, this.height - listTop - bottomArea);
-            SettingsList settingsList = new SettingsList(this.client, this.width, listHeight, listTop);
+            SettingsList settingsList = new SettingsList(this.client, this.width, this.height, listTop, listTop + listHeight);
             this.addDrawableChild(settingsList);
             int fieldWidth = 50;
             int resetW = 20;
@@ -1290,6 +1293,7 @@ final class NonModMenuGameplayScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             this.updateResetButtons();
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
@@ -1453,6 +1457,7 @@ final class NonModMenuGameplayScreens {
         }
 
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            this.renderBackground(context);
             super.render(context, mouseX, mouseY, delta);
             context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
         }

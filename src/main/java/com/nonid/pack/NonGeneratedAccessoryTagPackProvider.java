@@ -53,7 +53,7 @@ implements ResourcePackProvider {
         if (itemIds.isEmpty()) {
             return;
         }
-        String path = "tags/item/" + slotId + ".json";
+        String path = "tags/items/" + slotId + ".json";
         StringBuilder json = new StringBuilder();
         json.append("{\n  \"replace\": false,\n  \"values\": [\n");
         for (int i = 0; i < itemIds.size(); ++i) {

@@ -496,14 +496,14 @@ public final class NonDestroyedSkinClient {
             NativeImage image;
             if (stage >= 4 && skin != null && skin.length > 0) {
                 image = NativeImage.read((byte[])skin);
-                // 阶段4：整皮替换后再把头部贴回原始皮肤
-                NonDestroyedSkinClient.preserveHeadFromBase(client, image, currentBaseTexture);
                 NonDestroyedSkinClient.applyMessOverlays(client, image, messState);
                 NonDestroyedSkinClient.applyTankOverlay(client, image, messState, tankMaskType);
                 NonDestroyedSkinClient.applyAccessoryOverlays(client, image, accessoryOverlays);
+                // 阶段4最后一步：强制把头部贴回原始皮肤（无论 skin 来自哪次上传）
+                NonDestroyedSkinClient.preserveHeadFromBase(client, image, currentBaseTexture);
             } else {
                 image = overlayFallback ? NonDestroyedSkinClient.createMaskedOverlay(client, playerUuid, skin, stage) : NonDestroyedSkinClient.createCompositedSkin(client, playerUuid, skin, stage, currentBaseTexture, messState, tankMaskType, accessoryOverlays);
-                if (image != null && overlayFallback) {
+                if (image != null && stage > 0) {
                     NonDestroyedSkinClient.preserveHeadFromBase(client, image, currentBaseTexture);
                 }
             }
@@ -1070,9 +1070,19 @@ public final class NonDestroyedSkinClient {
         }
     }
 
-    /** 清除破损皮肤纹理缓存，改配置/命令后必须调用，否则游戏里看不到新效果。 */
+    /** 清除缓存并强制用当前 PNG/配置重新生成、上传破损皮肤。 */
     public static void invalidateTextureCache() {
         TEXTURE_CACHE.clear();
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.player != null) {
+            UUID id = client.player.getUuid();
+            DESTROYED_SKINS.remove(id);
+            clearCachedTextures(id);
+            lastUploadedAutoBaseSkin = null;
+            automaticSkinUnavailableThisConnection = false;
+            // 立即按新 PNG 重新生成并上传
+            uploadGeneratedSkinIfPossible();
+        }
     }
 
     @Nullable
@@ -1124,6 +1134,10 @@ public final class NonDestroyedSkinClient {
             return;
         }
         NativeImage base = NonDestroyedSkinClient.tryReadBaseSkin(client, currentBaseTexture);
+        if (base == null && client != null && client.player != null) {
+            Identifier playerSkin = client.player.getSkinTexture();
+            base = NonDestroyedSkinClient.tryReadBaseSkin(client, playerSkin);
+        }
         if (base == null) {
             NeedsOfNature.LOGGER.info("[SKIN] preserveHead FAILED: no base skin readable (input={})", currentBaseTexture);
             return;

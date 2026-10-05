@@ -1,4 +1,5 @@
 {
+  "key.categories.animationframework": "AnimationFramework",
   "key.categories.animationframework.main": "AnimationFramework",
   "key.category.animationframework.main": "AnimationFramework",
   "key.animationframework.select_actor": "Select actor (debug)",

@@ -15,6 +15,7 @@ repositories {
     maven { url = 'https://maven.terraformersmc.com/releases/' }
     maven { url = 'https://maven.ladysnake.org/releases' }
     maven { url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
+    maven { url = 'https://api.modrinth.com/maven' }
 }
 
 dependencies {
@@ -23,6 +24,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     modImplementation "software.bernie.geckolib:geckolib-fabric-1.20.1:${project.geckolib_version}"
+    modCompileOnly "maven.modrinth:modmenu:${project.modmenu_version}"
 }
 
 processResources {
@@ -44,10 +46,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-// ModMenu 集成类不在本仓库编译（可选集成，按需自行接入）
-sourceSets {
-    main.java.exclude 'com/afwid/integration/AfwModMenuIntegration.java'
-}
+// ModMenu 集成：编译 AfwModMenuIntegration，供 modmenu 入口打开配置界面
 
 jar {
     from('NOTICE') {

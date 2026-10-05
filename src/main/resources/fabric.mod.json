@@ -16,6 +16,9 @@
     "client": [
       "com.afwid.AnimationFrameworkClient"
     ],
+    "modmenu": [
+      "com.afwid.integration.AfwModMenuIntegration"
+    ],
     "fabric-datagen": [
       "com.afwid.AnimationFrameworkDataGenerator"
     ]

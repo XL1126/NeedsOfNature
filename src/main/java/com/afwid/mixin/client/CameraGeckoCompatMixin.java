@@ -23,11 +23,6 @@ implements AfwCameraPosAccess {
     @Shadow
     private Vec3d pos;
 
-    @Unique
-    public Vec3d method_19326() {
-        return this.pos;
-    }
-
     @Override
     @Unique
     public Vec3d afw$getPos() {

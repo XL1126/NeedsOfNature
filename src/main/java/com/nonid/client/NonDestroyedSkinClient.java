@@ -546,7 +546,7 @@ public final class NonDestroyedSkinClient {
                 int maskHeight = mask.getHeight();
                 for (int y = 0; y < height; ++y) {
                     for (int x = 0; x < width; ++x) {
-                        if (NonDestroyedSkinClient.shouldPreserveHeadPixel(y)) continue;
+                        if (y < 16 && NeedsOfNature.getConfig().isPreserveDestroyedSkinHead()) continue;
                         int factor = NonDestroyedSkinClient.maskFactor(mask.getColor(x % maskWidth, y % maskHeight));
                         if (factor <= 0) continue;
                         int baseArgb = base.getColor(x, y);

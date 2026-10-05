@@ -111,16 +111,18 @@ final class NonCommands {
             LiteralArgumentBuilder<ServerCommandSource> head = CommandManager.literal("head");
             head.then(CommandManager.literal("on").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), true)));
             head.then(CommandManager.literal("off").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), false)));
-            LiteralArgumentBuilder<ServerCommandSource> ripped = CommandManager.literal("ripped");
-            ripped.then(head);
             LiteralArgumentBuilder<ServerCommandSource> variant = CommandManager.literal("variant");
             variant.then(CommandManager.literal("slim").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "slim")));
             variant.then(CommandManager.literal("alex").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "alex")));
             variant.then(CommandManager.literal("wide").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "wide")));
             variant.then(CommandManager.literal("kai").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "kai")));
             variant.then(CommandManager.literal("reset").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "reset")));
+            variant.then(CommandManager.argument("name", StringArgumentType.word())
+                    .executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(),
+                            StringArgumentType.getString(ctx, "name"))));
+            // 命令挂在 skin 下：/needsofnature skin head ... 、/needsofnature skin variant ...
             LiteralArgumentBuilder<ServerCommandSource> skin = CommandManager.literal("skin");
-            skin.then(ripped);
+            skin.then(head);
             skin.then(variant);
             dispatcher.register(CommandManager.literal("needsofnature").requires(NonCommands::isOpCommandSource).then(skin));
         });

@@ -18,7 +18,7 @@ public final class AfwAnimationCameraZoom {
     private static final float MIN_DISTANCE = 0.5f;
     private static final float MAX_DISTANCE = 8.0f;
     private static final float SCROLL_STEP = 0.25f;
-    private static final float SMOOTHING_PER_TICK = 0.35f;
+    private static final float SMOOTHING_PER_TICK = 0.18f;
     private static final float SNAP_EPSILON = 0.005f;
     private static float previousDistance = 4.0f;
     private static float currentDistance = 4.0f;

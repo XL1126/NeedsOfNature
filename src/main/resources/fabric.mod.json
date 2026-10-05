@@ -4,9 +4,7 @@
   "version": "${version}",
   "name": "Animation Director",
   "description": "Mod that allows to play geckolib animations with one or more entities or players",
-  "authors": [
-    "L1Z0"
-  ],
+  "authors": ["L1Z0", "XL1126 (1.20.1 port)"],
   "icon": "icon.png",
   "environment": "*",
   "entrypoints": {

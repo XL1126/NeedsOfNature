@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class AfwFirstPersonCameraCollision {
     private static final double CAMERA_BOX_SIZE = 0.25;
-    private static final double PUSH_EPSILON = 0.005;
+    private static final double PUSH_EPSILON = 0.02;
     private static final int MAX_PUSH_ITERATIONS = 8;
 
     private AfwFirstPersonCameraCollision() {

@@ -526,7 +526,11 @@ public final class NonDestroyedSkinClient {
         if (currentBaseTexture == null) {
             return null;
         }
-        NativeImage base = NonDestroyedSkinClient.readTextureImage(client, currentBaseTexture);
+        // 动态皮肤（minecraft:skins/…）readTextureImage 可能失败，走 tryReadBaseSkin
+        NativeImage base = NonDestroyedSkinClient.tryReadBaseSkin(client, currentBaseTexture);
+        if (base == null) {
+            base = NonDestroyedSkinClient.readTextureImage(client, currentBaseTexture);
+        }
         if (base == null) {
             return null;
         }
@@ -735,14 +739,59 @@ public final class NonDestroyedSkinClient {
         return Identifier.of((String)"needsofnature", (String)(DEFAULT_DESTROYED_SKIN_PREFIX + key.model() + "/" + key.name() + suffix + ".png"));
     }
 
+    /**
+     * 解析破损皮肤变体。优先级：命令/配置手动指定 → 原版默认皮路径 → 按模型自动 slim=alex / wide=kai。
+     * 手动指定时绝不走像素比对。
+     */
     @Nullable
     private static DefaultSkinKey resolveDefaultSkinKey(MinecraftClient client, Identifier baseSkin) {
+        // 1) 手动指定（最高优先级）
+        String manual = NeedsOfNature.getConfig().getDestroyedSkinVariant();
+        if (manual != null && !manual.isBlank()) {
+            String raw = manual.trim();
+            String model = NonDestroyedSkinClient.playerModelDir(client);
+            String name = raw;
+            int slash = raw.indexOf('/');
+            if (slash >= 0) {
+                String m = raw.substring(0, slash).trim().toLowerCase(java.util.Locale.ROOT);
+                name = raw.substring(slash + 1).trim();
+                if (m.equals("slim") || m.equals("alex")) {
+                    model = "slim";
+                } else if (m.equals("wide") || m.equals("kai") || m.equals("default")) {
+                    model = "wide";
+                }
+            } else {
+                String lower = raw.toLowerCase(java.util.Locale.ROOT);
+                if (lower.equals("slim") || lower.equals("alex")) {
+                    return new DefaultSkinKey("slim", "alex");
+                }
+                if (lower.equals("wide") || lower.equals("kai")) {
+                    return new DefaultSkinKey("wide", "kai");
+                }
+                if (lower.equals("auto") || lower.equals("reset")) {
+                    // 落入自动
+                } else if (!name.isBlank()) {
+                    return new DefaultSkinKey(model, name.toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+            if (!name.isBlank()) {
+                return new DefaultSkinKey(model, name.toLowerCase(java.util.Locale.ROOT));
+            }
+        }
+        // 2) 原版默认皮肤路径 minecraft:textures/entity/player/{slim|wide}/{name}.png
         DefaultSkinKey parsed = NonDestroyedSkinClient.parseDefaultSkinKey(baseSkin);
         if (parsed != null) {
             return parsed;
         }
-        DefaultSkinMatch match = NonDestroyedSkinClient.detectDefaultSkinMatchByPixels(client, baseSkin);
-        return match != null && match.accepted() ? match.key() : null;
+        // 3) 自动：slim→alex，wide→kai（不跑像素比对，避免绕过配置）
+        String model = NonDestroyedSkinClient.playerModelDir(client);
+        return new DefaultSkinKey(model, "slim".equals(model) ? "alex" : "kai");
+    }
+
+    private static String playerModelDir(MinecraftClient client) {
+        String currentModel = (client != null && client.player != null) ? client.player.getModel() : "slim";
+        // getModel() == "default" 表示粗手 wide；"slim" 表示细手
+        return "default".equals(currentModel) ? "wide" : "slim";
     }
 
     @Nullable
@@ -886,7 +935,11 @@ public final class NonDestroyedSkinClient {
     }
 
     private static byte[] createGeneratedDestroyedSkin(MinecraftClient client, Identifier baseSkin) throws IOException {
-        NativeImage base = NonDestroyedSkinClient.readTextureImage(client, baseSkin);
+        NativeImage baseImg = NonDestroyedSkinClient.tryReadBaseSkin(client, baseSkin);
+        if (baseImg == null) {
+            baseImg = NonDestroyedSkinClient.readTextureImage(client, baseSkin);
+        }
+        final NativeImage base = baseImg;
         if (base == null) {
             return null;
         }
@@ -923,7 +976,7 @@ public final class NonDestroyedSkinClient {
     private static NativeImage readDestroyedBaseTexture(MinecraftClient client, boolean wide) throws IOException {
         boolean useMaleTexture = NeedsOfNature.getConfig().getPlayerGenderSelection() == NonConfig.PlayerGenderSelection.MALE;
         Identifier bundledModel = NonDestroyedSkinClient.defaultDestroyedTexture(useMaleTexture, wide);
-        NativeImage bundledModelImage = NonDestroyedSkinClient.readBundledDestroyedTexture(client, bundledModel);
+        NativeImage bundledModelImage = NonDestroyedSkinClient.readVariantTextureWithFallback(client, bundledModel);
         if (bundledModelImage != null) {
             return bundledModelImage;
         }
@@ -948,17 +1001,78 @@ public final class NonDestroyedSkinClient {
     }
 
     private static Identifier defaultDestroyedTexture(boolean useMaleTexture, boolean wide) {
+        String model = wide ? "wide" : "slim";
+        String name = "slim".equals(model) ? "alex" : "kai";
         String variant = NeedsOfNature.getConfig().getDestroyedSkinVariant();
         if (variant != null && !variant.isBlank()) {
-            Identifier custom = NonDestroyedSkinClient.resolveVariantTexture(variant, wide);
-            if (custom != null) {
-                return custom;
+            String raw = variant.trim();
+            int slash = raw.indexOf('/');
+            if (slash >= 0) {
+                String m = raw.substring(0, slash).trim().toLowerCase(java.util.Locale.ROOT);
+                name = raw.substring(slash + 1).trim().toLowerCase(java.util.Locale.ROOT);
+                if (m.equals("slim") || m.equals("alex")) {
+                    model = "slim";
+                } else if (m.equals("wide") || m.equals("kai") || m.equals("default")) {
+                    model = "wide";
+                }
+            } else {
+                String lower = raw.toLowerCase(java.util.Locale.ROOT);
+                if (lower.equals("slim") || lower.equals("alex")) {
+                    model = "slim";
+                    name = "alex";
+                } else if (lower.equals("wide") || lower.equals("kai")) {
+                    model = "wide";
+                    name = "kai";
+                } else if (!lower.equals("auto") && !lower.equals("reset")) {
+                    name = lower;
+                }
             }
         }
-        // 文档默认：纤细 → alex_f，粗手臂 → kai_m
-        return wide
-                ? Identifier.of("needsofnature", "textures/player_destroyed/default/wide/kai_m.png")
-                : Identifier.of("needsofnature", "textures/player_destroyed/default/slim/alex_f.png");
+        String genderSuffix = useMaleTexture ? "_m" : "_f";
+        // 路径：textures/player_destroyed/default/{model}/{name}_{f|m}.png
+        return Identifier.of("needsofnature",
+                DEFAULT_DESTROYED_SKIN_PREFIX + model + "/" + name + genderSuffix + ".png");
+    }
+
+    /** 读取变体贴图：按 {name}_{f|m} → {name} → 另一性别后缀 回退。 */
+    @Nullable
+    private static NativeImage readVariantTextureWithFallback(MinecraftClient client, Identifier preferred) {
+        NativeImage img = NonDestroyedSkinClient.readBundledDestroyedTextureOrNull(client, preferred);
+        if (img != null) {
+            return img;
+        }
+        String path = preferred.getPath();
+        // 去掉 _f/_m 再试
+        String alt = path.replace("_f.png", ".png").replace("_m.png", ".png");
+        if (!alt.equals(path)) {
+            img = NonDestroyedSkinClient.readBundledDestroyedTextureOrNull(client, Identifier.of("needsofnature", alt));
+            if (img != null) {
+                return img;
+            }
+        }
+        String other = path.endsWith("_f.png") ? path.replace("_f.png", "_m.png")
+                : path.endsWith("_m.png") ? path.replace("_m.png", "_f.png") : null;
+        if (other != null) {
+            img = NonDestroyedSkinClient.readBundledDestroyedTextureOrNull(client, Identifier.of("needsofnature", other));
+            if (img != null) {
+                return img;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static NativeImage readBundledDestroyedTextureOrNull(MinecraftClient client, Identifier id) {
+        try {
+            return NonDestroyedSkinClient.readBundledDestroyedTexture(client, id);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 清除破损皮肤纹理缓存，改配置/命令后必须调用，否则游戏里看不到新效果。 */
+    public static void invalidateTextureCache() {
+        TEXTURE_CACHE.clear();
     }
 
     @Nullable

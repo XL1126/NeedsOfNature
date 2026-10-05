@@ -129,6 +129,7 @@ final class NonCommands {
     private static int setPreserveDestroyedSkinHead(ServerCommandSource source, boolean value) {
         NeedsOfNature.getConfig().setPreserveDestroyedSkinHead(value);
         NeedsOfNature.getConfig().save();
+        com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
         source.sendFeedback(() -> Text.literal((String)("preserveDestroyedSkinHead = " + value)), true);
         return 1;
     }
@@ -137,6 +138,7 @@ final class NonCommands {
         String stored = "reset".equalsIgnoreCase(variant) ? "" : variant;
         NeedsOfNature.getConfig().setDestroyedSkinVariant(stored);
         NeedsOfNature.getConfig().save();
+        com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
         source.sendFeedback(() -> Text.literal((String)("destroyedSkinVariant = " + (stored.isEmpty() ? "<auto>" : stored))), true);
         return 1;
     }
@@ -376,6 +378,7 @@ final class NonCommands {
             holder.setDestroyedSkinDamage(NonDestroyedSkinSystem.destroyedSkinDamageForStage(clamped));
         }
         NonDestroyedSkinSystem.setDestroyedSkinStage(target, clamped);
+        com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
         source.sendFeedback(() -> Text.literal((String)(target.getName().getString() + " ripped skin stage set to " + clamped + " (damage " + NonDestroyedSkinSystem.destroyedSkinDamageForStage(clamped) + "/10).")), true);
         return clamped;
     }

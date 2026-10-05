@@ -496,11 +496,16 @@ public final class NonDestroyedSkinClient {
             NativeImage image;
             if (stage >= 4 && skin != null && skin.length > 0) {
                 image = NativeImage.read((byte[])skin);
+                // 阶段4：整皮替换后再把头部贴回原始皮肤
+                NonDestroyedSkinClient.preserveHeadFromBase(client, image, currentBaseTexture);
                 NonDestroyedSkinClient.applyMessOverlays(client, image, messState);
                 NonDestroyedSkinClient.applyTankOverlay(client, image, messState, tankMaskType);
                 NonDestroyedSkinClient.applyAccessoryOverlays(client, image, accessoryOverlays);
             } else {
                 image = overlayFallback ? NonDestroyedSkinClient.createMaskedOverlay(client, playerUuid, skin, stage) : NonDestroyedSkinClient.createCompositedSkin(client, playerUuid, skin, stage, currentBaseTexture, messState, tankMaskType, accessoryOverlays);
+                if (image != null && overlayFallback) {
+                    NonDestroyedSkinClient.preserveHeadFromBase(client, image, currentBaseTexture);
+                }
             }
             if (image == null) {
                 return null;
@@ -994,6 +999,103 @@ public final class NonDestroyedSkinClient {
 
     private static boolean shouldPreserveHead() {
         return NeedsOfNature.getConfig().isPreserveDestroyedSkinHead();
+    }
+
+    /**
+     * 把原始皮肤的头部像素（y&lt;16）复制到破损皮肤上。
+     */
+    private static void preserveHeadFromBase(MinecraftClient client, NativeImage image, @Nullable Identifier currentBaseTexture) {
+        if (!NeedsOfNature.getConfig().isPreserveDestroyedSkinHead()) {
+            NeedsOfNature.LOGGER.info("[SKIN] preserveHead disabled by config");
+            return;
+        }
+        NativeImage base = NonDestroyedSkinClient.tryReadBaseSkin(client, currentBaseTexture);
+        if (base == null) {
+            NeedsOfNature.LOGGER.info("[SKIN] preserveHead FAILED: no base skin readable (input={})", currentBaseTexture);
+            return;
+        }
+        try {
+            NeedsOfNature.LOGGER.info("[SKIN] preserveHead OK: base={}x{} dest={}x{}", base.getWidth(), base.getHeight(), image.getWidth(), image.getHeight());
+            int width = Math.min(base.getWidth(), image.getWidth());
+            int height = Math.min(base.getHeight(), image.getHeight());
+            for (int y = 0; y < Math.min(16, height); ++y) {
+                for (int x = 0; x < width; ++x) {
+                    image.setColor(x, y, base.getColor(x, y));
+                }
+            }
+        } finally {
+            base.close();
+        }
+    }
+
+    /**
+     * 多级回退读取玩家原始皮肤（资源 → 纹理管理器 → 反射 getImage → 本地缓存）。
+     */
+    @Nullable
+    private static NativeImage tryReadBaseSkin(MinecraftClient client, @Nullable Identifier currentBaseTexture) {
+        if (client == null) {
+            return null;
+        }
+        // 1. 资源包纹理
+        if (currentBaseTexture != null) {
+            try {
+                NativeImage img = NonDestroyedSkinClient.readTextureImage(client, currentBaseTexture);
+                if (img != null) {
+                    return img;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        // 2. 纹理管理器 NativeImageBackedTexture / 3. 反射 getImage
+        if (currentBaseTexture != null) {
+            try {
+                AbstractTexture tex = client.getTextureManager().getTexture(currentBaseTexture);
+                if (tex instanceof NativeImageBackedTexture backed && backed.getImage() != null) {
+                    NativeImage src = backed.getImage();
+                    NativeImage copy = new NativeImage(NativeImage.Format.RGBA, src.getWidth(), src.getHeight(), false);
+                    copy.copyFrom(src);
+                    return copy;
+                }
+                if (tex != null) {
+                    try {
+                        java.lang.reflect.Method getImg = tex.getClass().getMethod("getImage");
+                        Object result = getImg.invoke(tex);
+                        if (result instanceof NativeImage) {
+                            NativeImage src = (NativeImage)result;
+                            NativeImage copy = new NativeImage(NativeImage.Format.RGBA, src.getWidth(), src.getHeight(), false);
+                            copy.copyFrom(src);
+                            return copy;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        // 4. 玩家当前皮肤 / 本地 skins 缓存
+        if (client.player != null) {
+            Identifier playerSkin = client.player.getSkinTexture();
+            if (playerSkin != null) {
+                try {
+                    NativeImage img = NonDestroyedSkinClient.readTextureImage(client, playerSkin);
+                    if (img != null) {
+                        return img;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        if (currentBaseTexture != null && currentBaseTexture.getPath().startsWith("skins/")) {
+            String hash = currentBaseTexture.getPath().substring(6);
+            java.io.File f = new java.io.File(System.getProperty("user.home") + "/.minecraft/assets/skins/", hash);
+            if (f.exists() && f.isFile()) {
+                try {
+                    return NativeImage.read(Files.readAllBytes(f.toPath()));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean shouldPreserveHeadPixel(int y) {

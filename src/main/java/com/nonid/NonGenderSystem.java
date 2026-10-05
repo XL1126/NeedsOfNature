@@ -150,8 +150,8 @@ final class NonGenderSystem {
             mask = NonGenderSystem.resolveGenderMaskFromTags((Entity)player);
         }
         NonConfig config = NeedsOfNature.getConfig();
-        // 要求进服选择时始终弹窗（含已有默认性别/旧档已标记的情况）
-        if (config.requirePlayerGenderSelectionOnJoin()) {
+        // 仅首次进入（尚未确认过性别）时弹窗；之后再进世界不再弹
+        if (config.requirePlayerGenderSelectionOnJoin() && !NonGenderSystem.hasPlayerGenderSelected(player)) {
             if (mask != 0) {
                 NonGenderSystem.applyGenderMask((Entity)player, mask);
             }
@@ -162,6 +162,9 @@ final class NonGenderSystem {
             mask = 2;
             NonGenderSystem.applyPlayerGenderMask(player, mask, false, NonChangeSource.SYSTEM);
             return;
+        }
+        if (!NonGenderSystem.hasPlayerGenderSelected(player)) {
+            NonGenderSystem.markPlayerGenderSelected(player);
         }
         NonGenderSystem.applyGenderMask((Entity)player, mask);
     }

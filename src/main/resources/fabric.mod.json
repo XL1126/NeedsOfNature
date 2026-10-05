@@ -4,9 +4,7 @@
 	"version": "${version}",
 	"name": "NeedsOfNature",
 	"description": "Magic mod using AnimationDirector to play animations.",
-	"authors": [
-		"L1Z0"
-	],
+	"authors": ["L1Z0", "XL1126 (1.20.1 port)"],
 	"icon": "icon.png",
 	"environment": "*",
 	"entrypoints": {

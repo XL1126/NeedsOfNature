@@ -109,16 +109,16 @@ final class NonCommands {
         // 破损皮肤：头部保留 / 变体指定
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             LiteralArgumentBuilder<ServerCommandSource> head = CommandManager.literal("head");
-            head.then(CommandManager.literal("on").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), true)));
-            head.then(CommandManager.literal("off").executes(ctx -> NonCommands.setPreserveDestroyedSkinHead(ctx.getSource(), false)));
+            head.then(CommandManager.literal("on").executes(ctx -> NonCommands.setPreserveHeadCommand(ctx.getSource(), true)));
+            head.then(CommandManager.literal("off").executes(ctx -> NonCommands.setPreserveHeadCommand(ctx.getSource(), false)));
             LiteralArgumentBuilder<ServerCommandSource> variant = CommandManager.literal("variant");
-            variant.then(CommandManager.literal("slim").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "slim")));
-            variant.then(CommandManager.literal("alex").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "alex")));
-            variant.then(CommandManager.literal("wide").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "wide")));
-            variant.then(CommandManager.literal("kai").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "kai")));
-            variant.then(CommandManager.literal("reset").executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(), "reset")));
+            variant.then(CommandManager.literal("slim").executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(), "slim")));
+            variant.then(CommandManager.literal("alex").executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(), "alex")));
+            variant.then(CommandManager.literal("wide").executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(), "wide")));
+            variant.then(CommandManager.literal("kai").executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(), "kai")));
+            variant.then(CommandManager.literal("reset").executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(), "")));
             variant.then(CommandManager.argument("name", StringArgumentType.word())
-                    .executes(ctx -> NonCommands.setDestroyedSkinVariant(ctx.getSource(),
+                    .executes(ctx -> NonCommands.setSkinVariantCommand(ctx.getSource(),
                             StringArgumentType.getString(ctx, "name"))));
             // 命令挂在 skin 下：/needsofnature skin head ... 、/needsofnature skin variant ...
             LiteralArgumentBuilder<ServerCommandSource> skin = CommandManager.literal("skin");
@@ -128,20 +128,26 @@ final class NonCommands {
         });
     }
 
-    private static int setPreserveDestroyedSkinHead(ServerCommandSource source, boolean value) {
-        NeedsOfNature.getConfig().setPreserveDestroyedSkinHead(value);
+    private static int setPreserveHeadCommand(ServerCommandSource source, boolean enabled) {
+        NeedsOfNature.getConfig().setPreserveDestroyedSkinHead(enabled);
         NeedsOfNature.getConfig().save();
         com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
-        source.sendFeedback(() -> Text.literal((String)("preserveDestroyedSkinHead = " + value)), true);
+        source.sendFeedback(() -> Text.literal("Head preservation: " + (enabled ? "ON" : "OFF")), true);
         return 1;
     }
 
-    private static int setDestroyedSkinVariant(ServerCommandSource source, String variant) {
-        String stored = "reset".equalsIgnoreCase(variant) ? "" : variant;
-        NeedsOfNature.getConfig().setDestroyedSkinVariant(stored);
-        NeedsOfNature.getConfig().save();
-        com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
-        source.sendFeedback(() -> Text.literal((String)("destroyedSkinVariant = " + (stored.isEmpty() ? "<auto>" : stored))), true);
+    private static int setSkinVariantCommand(ServerCommandSource source, String variant) {
+        if (variant == null || variant.isBlank() || "reset".equalsIgnoreCase(variant) || "auto".equalsIgnoreCase(variant)) {
+            NeedsOfNature.getConfig().setDestroyedSkinVariant("");
+            NeedsOfNature.getConfig().save();
+            com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
+            source.sendFeedback(() -> Text.literal("Skin variant: auto"), true);
+        } else {
+            NeedsOfNature.getConfig().setDestroyedSkinVariant(variant.trim());
+            NeedsOfNature.getConfig().save();
+            com.nonid.client.NonDestroyedSkinClient.invalidateTextureCache();
+            source.sendFeedback(() -> Text.literal("Skin variant: " + variant.trim()), true);
+        }
         return 1;
     }
 
